@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "stdio.h": "c",
+        "stdlib.h": "c",
+        "socket.h": "c",
+        "strings.h": "c",
+        "wrap.h": "c",
+        "endian.h": "c"
+    }
+}

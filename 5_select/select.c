@@ -7,22 +7,26 @@
 
 #define PORT 8888
 
+/*
+假设现在4-1023个文件描述符需要监听，但是5-1000这些文件描述符关闭了？
+这样会导致每次遍历还是需要遍历4-1023个，可以自定一个数组来维护监听的描述符
+*/
 int main()
 {
     // 创建套接字，绑定
     int lfd = tcp4bind(PORT, NULL);
     // 监听
     Listen(lfd, 128);
-    int maxfd = lfd;    // 最大的文件描述符
-    fd_set oldset,rset;
+    int maxfd = lfd; // 最大的文件描述符
+    fd_set oldset, rset;
     FD_ZERO(&oldset);
     FD_ZERO(&rset);
     // 将lfd添加到oldset集合中
     FD_SET(lfd, &oldset);
     while (1)
     {
-        rset = oldset;  //将oldset赋值给需要监听的集合rset
-        int n = select(maxfd+1, &rset, NULL, NULL, NULL);
+        rset = oldset; // 将oldset赋值给需要监听的集合rset
+        int n = select(maxfd + 1, &rset, NULL, NULL, NULL);
         if (n < 0)
         {
             perror("");
@@ -30,7 +34,7 @@ int main()
         }
         else if (n == 0)
         {
-            continue;//如果没有变化，重新监听
+            continue; // 如果没有变化，重新监听
         }
         else // 监听到了文件描述符的变化
         {
@@ -41,40 +45,42 @@ int main()
                 socklen_t len = sizeof(cliaddr);
                 char ip[16] = "";
                 // 提取新的连接
-                int cfd = Accept(lfd, (struct sockaddr*)&cliaddr, &len);
+                int cfd = Accept(lfd, (struct sockaddr *)&cliaddr, &len);
                 printf("new clinet ip=%s port=%d",
-                        inet_ntop(AF_INET, &cliaddr.sin_addr.s_addr, ip, 16),
-                    ntohs(cliaddr.sin_port));
+                       inet_ntop(AF_INET, &cliaddr.sin_addr.s_addr, ip, 16),
+                       ntohs(cliaddr.sin_port));
 
                 // 将cfd添加到oldset集合中，以下次监听
                 FD_SET(cfd, &oldset);
 
                 // 更新maxfd
-                if (cfd > maxfd) maxfd = cfd;
+                if (cfd > maxfd)
+                    maxfd = cfd;
 
                 // 如果只有lfd变化，continue
-                if (--n == 0) continue;
+                if (--n == 0)
+                    continue;
             }
 
             // cfd  遍历lfd之后的文件描述符是否在rset集合中，如果在则cfd变化
-            for (int i = lfd+1; i<=maxfd; ++i)
+            for (int i = lfd + 1; i <= maxfd; ++i)
             {
                 // 如果i文件描述符在rset集合中
                 if (FD_ISSET(i, &rset))
                 {
                     char buf[1500] = "";
                     int ret = Read(i, buf, sizeof(buf));
-                    if (ret < 0)    // 出错，将cfd关闭，从oldset中删除cfd
+                    if (ret < 0) // 出错，将cfd关闭，从oldset中删除cfd
                     {
                         perror("");
                         close(i);
-                        FD_CLR(i ,&oldset);
+                        FD_CLR(i, &oldset);
                     }
                     else if (ret == 0)
                     {
                         printf("client close\n");
                         close(i);
-                        FD_CLR(i ,&oldset);
+                        FD_CLR(i, &oldset);
                     }
                     else
                     {

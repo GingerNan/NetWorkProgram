@@ -5,6 +5,10 @@
         "socket.h": "c",
         "strings.h": "c",
         "wrap.h": "c",
-        "endian.h": "c"
+        "endian.h": "c",
+        "time.h": "c",
+        "unistd.h": "c",
+        "inet.h": "c",
+        "threadpool.h": "c"
     }
 }
